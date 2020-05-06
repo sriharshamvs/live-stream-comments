@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat Room</title>
+</head>
+<body>
+    <div id="chat-log" style="width:500px;padding:5px"></div><br>
+    Name : <input id="chat-message-username" type="text" size="100" placeholder="Name"><br><br>
+    <input id="chat-message-input" type="text" size="85" placeholder="Test Message">
+    <input id="chat-message-submit" type="button" value="Send">
+    {{ room_name|json_script:"room-name" }}
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/comments_mod/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.command == 'add') {
+                btn = "<button class='deletemsg' style='float:right' onclick='deleteMsg(\"" + data.id + "\");'>Delete</button>"
+                document.querySelector('#chat-log').innerHTML += ("<div style=\"border: 1px solid black;padding:5px;margin:5px\" id='comment_" + data.id + "'>" + data.username + ':' + data.message + btn + '</div>');
+            }
+            else if (data.command == 'delete') {
+                el = document.querySelector('#comment_'+data.id);
+                el.remove();
+            }  else if (data.command == 'delete_error') {
+                alert('You cannot remove this !')
+            }
+        };
+
+        function deleteMsg(id) {
+            el = document.querySelector('#comment_'+id).innerHTML;
+             chatSocket.send(JSON.stringify({
+                'command' : 'delete',
+                'id' : id,
+            }));
+        }
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            const userName = document.querySelector('#chat-message-username').value;
+            chatSocket.send(JSON.stringify({
+                'command' : 'add',
+                'username': userName,
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+</body>
+</html>
