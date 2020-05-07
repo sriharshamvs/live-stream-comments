@@ -48,11 +48,30 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
         return messages
+    
+    def get_pinned_messages(self):
+        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name, pinned=True).order_by('-created_at')
+        messages = []
+        for message in old_messages:
+            messages.append({'command':'get_pinned_message',
+                             'id':message.id,
+                             'user_id': message.user_id,
+                             'message':message.message,
+                             'username':message.user_name,
+                             'created_at': timesince.timesince(message.created_at)})
+        return messages
+
 
     async def push_old_messages(self, start, stop):
         old_messages = await database_sync_to_async(self.get_old_messages)(start, stop)
         for message in old_messages:
             await  self.send_message(message)
+    
+    async def send_pinned_messages(self):
+        old_messages = await database_sync_to_async(self.get_pinned_messages)()
+        for message in old_messages:
+            await  self.send_message(message)
+
 
     @database_sync_to_async
     def add_message(self, username, message):
@@ -62,6 +81,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         channel_message.user_name = username
         channel_message.message = message
         channel_message.votes = 0
+        channel_message.pinned = False
         channel_message.save()
         return channel_message.id
 
@@ -103,6 +123,10 @@ class CommentsConsumer(AsyncWebsocketConsumer):
             stopIndex  = int(text_data_json['stop']);
             await self.push_old_messages(startIndex, stopIndex)
 
+        elif command == 'get_pinned_messages':
+            
+            await self.send_pinned_messages()
+
         elif command == 'delete':
             id = text_data_json['id']
             s = await self.delete_message(id)
@@ -138,6 +162,9 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                 'user_id':event['user_id'],
                 'username': username
             }))
+        elif command == 'get_pinned_messages':
+            await self.send_message({'command':'clear_pins'})
+            await self.send_pinned_messages()
         elif command == 'delete':
             id = event['id']
 
