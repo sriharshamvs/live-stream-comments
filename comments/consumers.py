@@ -19,6 +19,11 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
+        await self.send(text_data=json.dumps({
+            'command': 'register',
+            'id': self.user_id,
+        }))
+
         await self.push_old_messages()
 
 
@@ -33,11 +38,12 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         await  self.send(text_data=json.dumps(message))
 
     def get_old_messages(self):
-        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).all()
+        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).order_by('created_at').all()
         messages = []
         for message in old_messages:
             messages.append({'command':'add',
                              'id':message.id,
+                             'user_id': message.user_id,
                              'message':message.message,
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
@@ -84,6 +90,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                     'type': 'chat_message',
                     'command' : command,
                     'id':message_id,
+                    'user_id':self.user_id,
                     'username': username,
                     'message': message
                 }
@@ -120,6 +127,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                 'command' : command,
                 'message': message,
                 'id': id,
+                'user_id':event['user_id'],
                 'username': username
             }))
         elif command == 'delete':

@@ -25,7 +25,7 @@ SECRET_KEY = 'qxi$!w=2l@l3xc@1!a1f#k+dmb3ih$1qb_kb5-$-^0w0l0qn9p'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['stream.swecha.org']
+ALLOWED_HOSTS = ['stream.swecha.org', '127.0.0.1']
 
 
 # Application definition

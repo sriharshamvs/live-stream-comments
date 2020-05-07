@@ -3,6 +3,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import  ChannelMessage
+from django.utils import  timesince
+
 import uuid
 
 class CommentsConsumerAdmin(AsyncWebsocketConsumer):
@@ -32,10 +34,15 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
         await  self.send(text_data=json.dumps(message))
 
     def get_old_messages(self):
-        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).all()
+        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).order_by('created_at').all()
         messages = []
         for message in old_messages:
-            messages.append({'command':'add', 'id':message.id, 'message':message.message, 'username':message.user_name})
+            messages.append({'command': 'add',
+                             'id': message.id,
+                             'user_id': message.user_id,
+                             'message': message.message,
+                             'username': message.user_name,
+                             'created_at': timesince.timesince(message.created_at)})
         return messages
 
     async def push_old_messages(self):
@@ -76,6 +83,7 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
                     'type': 'chat_message',
                     'command' : command,
                     'id':message_id,
+                    'user_id' : self.user_id,
                     'username': username,
                     'message': message
                 }
@@ -112,6 +120,7 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
                 'command' : command,
                 'message': message,
                 'id': id,
+                'user_id':event['user_id'],
                 'username': username
             }))
         elif command == 'delete':
