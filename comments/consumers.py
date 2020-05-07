@@ -24,7 +24,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
             'id': self.user_id,
         }))
 
-        await self.push_old_messages()
+#        await self.push_old_messages()
 
 
     async def disconnect(self, close_code):
@@ -37,11 +37,11 @@ class CommentsConsumer(AsyncWebsocketConsumer):
     async def send_message(self, message):
         await  self.send(text_data=json.dumps(message))
 
-    def get_old_messages(self):
-        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).order_by('created_at').all()
+    def get_old_messages(self, start, stop):
+        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).order_by('-created_at')[start:stop]
         messages = []
         for message in old_messages:
-            messages.append({'command':'add',
+            messages.append({'command':'get_message',
                              'id':message.id,
                              'user_id': message.user_id,
                              'message':message.message,
@@ -49,8 +49,8 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                              'created_at': timesince.timesince(message.created_at)})
         return messages
 
-    async def push_old_messages(self):
-        old_messages = await database_sync_to_async(self.get_old_messages)()
+    async def push_old_messages(self, start, stop):
+        old_messages = await database_sync_to_async(self.get_old_messages)(start, stop)
         for message in old_messages:
             await  self.send_message(message)
 
@@ -64,6 +64,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         channel_message.votes = 0
         channel_message.save()
         return channel_message.id
+
     @database_sync_to_async
     def delete_message(self, id):
 
@@ -79,6 +80,8 @@ class CommentsConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         command = text_data_json['command']
+
+
         if command == 'add':
             message = text_data_json['message']
             username = text_data_json['username']
@@ -95,6 +98,11 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                     'message': message
                 }
             )
+        elif command == 'get_messages':
+            startIndex = int(text_data_json['start']);
+            stopIndex  = int(text_data_json['stop']);
+            await self.push_old_messages(startIndex, stopIndex)
+
         elif command == 'delete':
             id = text_data_json['id']
             s = await self.delete_message(id)
