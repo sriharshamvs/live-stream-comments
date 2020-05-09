@@ -7,7 +7,7 @@ var d = document, s = d.createElement('script');
 s.src = 'http://' + commentHost + '/static/materialize/js/materialize.js';
 (d.head || d.body).appendChild(s);*/
 
-inital_portion = '<div class="container"><div class="row"><div class="col-12"><div class="card lg-12 sm-12 md-12"><div class="card-body" style="padding-bottom: 10px"><div class="row"><div class="col lg-12 sm-12 md-12 form-group"><input class="form-control" id="chat-message-username" type="text" placeholder="Name"></div></div><div class="row"><div class="col sm-12 lg-12 md-12 form-group"><textarea class="form-control" id="chat-message-input" type="text" class="materialize-textarea" rows="5" placeholder="Test Message"></textarea></div></div><div class="row text-right"><div class="col-12 col-sm-12 col-lg-12 col-md-12"><a class="btn btn-primary" id="chat-message-submit" type="button" value="Send">Add Comment</a></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="pinned-chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin:10px;"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><button class="btn btn-primary form-control" onclick="load_comments();">Load More Comments</button></div></div></div>'
+inital_portion = '<div class="container"><div class="row"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><div class="card col lg-12 sm-12 md-12"><div class="card-body" style="padding-bottom: 10px"><div class="row"><div class="col lg-12 sm-12 md-12 form-group"><input class="form-control" id="chat-message-username" type="text" placeholder="Name"></div></div><div class="row"><div class="col sm-12 lg-12 md-12 form-group"><textarea class="form-control" id="chat-message-input" type="text" class="materialize-textarea" rows="5" placeholder="Test Message"></textarea></div></div><div class="row text-right"><div class="col-12 col-sm-12 col-lg-12 col-md-12"><a class="btn btn-primary" id="chat-message-submit" type="button" value="Send">Add Comment</a></div></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="pinned-chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin:10px;"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><button class="btn btn-primary form-control" onclick="load_comments();">Load More Comments</button></div></div></div>'
 
 function stringToHslColor(str, s, l) {
     var hash = 0;
@@ -21,7 +21,7 @@ function stringToHslColor(str, s, l) {
 
 document.querySelector('#comment_thread').innerHTML = inital_portion;
 const chatSocket = new WebSocket(
-    'ws://'
+    'wss://'
     + commentHost
     + ':8001/ws/comments/'
     + roomName
