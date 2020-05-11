@@ -125,7 +125,7 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
              channel_message.votes = 0
              channel_message.pinned = False
         
-             channel_message.approved = not self.channel.moderate
+             channel_message.approved = True
              ip_address = IPAddress.objects.filter(ip_address=self.user_id)
              if ip_address:
                 ip_address = ip_address.all()[0]
@@ -154,7 +154,7 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
         if command == 'add':
             message = text_data_json['message']
             username = text_data_json['username']
-            message_id, approved = await self.add_message(username, message, approved = True)
+            message_id, approved = await self.add_message(username, message)
             # Send message to room group
             await self.channel_layer.group_send(
                 self.room_group_name,

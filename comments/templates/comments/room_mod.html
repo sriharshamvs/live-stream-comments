@@ -251,7 +251,8 @@ sum_counts = function () {
                 chatSocket.send(JSON.stringify({
                     'command': 'add',
                     'username': userName,
-                    'message': message
+                    'message': message,
+                    'approved': true
                 }));
                 messageInputDom.value = '';
             } else {
