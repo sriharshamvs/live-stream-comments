@@ -29,6 +29,9 @@
 			<div class="card lg-12 sm-12 md-12">
 				<div class="card-body" style="padding-bottom: 10px">
 					<div class="row">
+					Live Stream Count: &nbsp; <span id='counter'></span>
+					</div>
+					<div class="row">
 						<div class="col lg-12 sm-12 md-12 form-group">
 							<input class="form-control" id="chat-message-username" type="text" placeholder="Name">
 					</div>
@@ -84,6 +87,13 @@
             + roomName
             + '/'
         );
+        const countSocket = new WebSocket(
+            'wss://'
+            + "stream.swecha.org:8001"
+            + '/ws/count/'
+            + roomName
+            + '/'
+        );
 
 	var startIndex = 0;
 	var stopIndex = 10;
@@ -108,7 +118,7 @@
 	
        chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
-    if (data.command == 'add' || data.command == 'get_message' || data.command=='get_pinned_message') {
+    if (data.command == 'moderate_message' || data.command == 'add' || data.command == 'get_message' || data.command=='get_pinned_message') {
         var color = stringToHslColor(data.user_id, 50, 60);
 
         svg = "<div style='width:50px;margin:20%;'><svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\"  class=\"avatar color-{{ color_ix }}\" ><circle cx=\"50%\" cy=\"50%\" fill=\"" + color + "\" r='12' ></circle><text text-anchor='middle' x=\"50%\" y=\"70%\" style=\"color:white\" font-size=\"15px\">" + data.username[0] + "</text></svg></div>";
@@ -120,14 +130,25 @@
 		btn += "<span><a class='deletemsg btn btn-success' onclick='pinMsg(\"" + data.id + "\");'>Pin</a></span>"
 
 	}
+	console.log(data);
+	if (data.approved == false && data.blocked == false){
+		btn += "&nbsp;<span><a class='deletemsg btn btn-primary' onclick='approveMsg(\"" + data.id + "\");'>Approve</a></span>"
+	}
+
 //            btn = '<div class="card-action" style="margin-top: 0">' + btn + '</div>';
     extra = "";    
 	extra2 = "";
+        extra3 = "";
 	if (data.command == 'get_pinned_message') {
 		extra = "border-primary";
 		extra2 = "pinned_";
 	}
-        card = '<div class="row" id="'+extra2+'comment_' + data.id + '" style="margin-top:10px;" ><div class="card '+extra+' col-sm-12 col-md-12 col-lg-12"><div class="row no-gutters" ><div class="card-image col col-sm col-md-1 col-lg-1" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8"><div class="card-body" ><b style="font-size: larger">' + data.username + '</b><p>' + data.message + '</p>' + btn + '</div></div></div></div></div>';
+        if (data.blocked) {
+		extra = "border-danger";
+                extra3 = "This IP is blocked !&nbsp;";
+//		extra2 = "pinned_";
+	}
+        card = '<div class="row" id="'+extra2+'comment_' + data.id + '" style="margin-top:10px;" ><div class="card '+extra+' col-sm-12 col-md-12 col-lg-12"><div class="row no-gutters" ><div class="card-image col col-sm col-md-1 col-lg-1" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8"><div class="card-body" ><b style="font-size: larger">' + extra3 +  data.username + ' @ ' + data.user_id + '</b><p>' + data.message + '</p>' + btn + '</div></div></div></div></div>';
 	if (data.command == 'add'){
 	        document.querySelector('#chat-log').innerHTML = card + document.querySelector('#chat-log').innerHTML;
 	} else if (data.command == 'get_message') {
@@ -149,6 +170,29 @@
     }
 };
 
+var streamCounts = {}
+
+sum_counts = function () {
+   var scount = 0;
+   var skeys = Object.keys(streamCounts);
+   for(var i=0; i < skeys.length; i++){
+	scount += streamCounts[skeys[i]];
+   }
+   return scount;
+
+}
+
+       countSocket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+	if (data.command == 'upd'){
+		el = document.querySelector('#counter');
+                streamCounts[data.id] = data.count;
+		el.innerHTML = sum_counts();
+
+	}
+};
+
+
         function deleteMsg(id) {
             el = document.querySelector('#comment_'+id).innerHTML;
              chatSocket.send(JSON.stringify({
@@ -165,6 +209,16 @@
                 'id' : id,
             }));
         }
+
+	  function approveMsg(id) {
+            el = document.querySelector('#comment_'+id);
+	    el.remove();
+             chatSocket.send(JSON.stringify({
+                'command' : 'approve_message',
+                'id' : id,
+            }));
+        }
+
 	  function unpinMsg(id) {
 	       document.querySelector('#pinned-chat-log').innerHTML = "";
              chatSocket.send(JSON.stringify({

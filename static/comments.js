@@ -52,7 +52,7 @@ load_comments = function() {
 chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
     if (data.command == 'add' || data.command == 'get_message' || data.command=='get_pinned_message') {
-        var color = stringToHslColor(data.user_id, 50, 60);
+        var color = stringToHslColor(data.user_id + "---" + data.username, 50, 60);
 
         svg = "<div style='width:50px;margin:20%;'><svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\"  class=\"avatar color-{{ color_ix }}\" ><circle cx=\"50%\" cy=\"50%\" fill=\"" + color + "\" r='12' ></circle><text text-anchor='middle' x=\"50%\" y=\"70%\" style=\"color:white\" font-size=\"15px\">" + data.username[0] + "</text></svg></div>";
 
@@ -71,7 +71,7 @@ chatSocket.onmessage = function (e) {
 	}
 
         card = '<div class="row" id="'+extra2+'comment_' + data.id + '" style="margin-top:10px;" ><div class="card '+extra+' col-sm-12 col-md-12 col-lg-12"><div class="row no-gutters" ><div class="card-image col-2 col-sm-2 col-md-1 col-lg-1" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8"><div class="card-body" ><b style="font-size: larger">' + data.username + '</b><p>' + data.message + '</p>' + btn + '</div></div></div></div></div>';
-	if (data.command == 'add'){
+	if (data.command == 'add' && data.approved){
 	        document.querySelector('#chat-log').innerHTML = card + document.querySelector('#chat-log').innerHTML;
 	} else if (data.command == 'get_message') {
 	        document.querySelector('#chat-log').innerHTML = document.querySelector('#chat-log').innerHTML + card;

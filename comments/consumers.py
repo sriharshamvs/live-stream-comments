@@ -2,29 +2,35 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import  ChannelMessage
+from .models import  ChannelMessage, Channel, IPAddress
 from django.utils import  timesince
 import uuid
 
 class CommentsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'comments_%s' % self.room_name
-        self.user_id = str(uuid.uuid4())
-
+        self.room_group_name = self.room_name
+        
+        exists = await self.channel_exists()
+        print(self.room_group_name, exists)
+        if exists:
         # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        await self.accept()
-        await self.send(text_data=json.dumps({
-            'command': 'register',
-            'id': self.user_id,
-        }))
-
+            self.channel = exists
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+	
+            await self.accept()
+            self.user_id = self.scope['client'][0]
+            await self.send(text_data=json.dumps({
+                'command': 'register',
+                'id': self.user_id,
+            }))
+        
+#        print(self.scope['client'])
 #        await self.push_old_messages()
+
 
 
     async def disconnect(self, close_code):
@@ -38,24 +44,27 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         await  self.send(text_data=json.dumps(message))
 
     def get_old_messages(self, start, stop):
-        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name).order_by('-created_at')[start:stop]
+        
+        old_messages = ChannelMessage.objects.filter(channel=self.channel, approved=True).order_by('-created_at')[start:stop]
         messages = []
+
         for message in old_messages:
+
             messages.append({'command':'get_message',
                              'id':message.id,
-                             'user_id': message.user_id,
+                             'user_id': message.ip_address.id,
                              'message':message.message,
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
         return messages
     
     def get_pinned_messages(self):
-        old_messages = ChannelMessage.objects.filter(channel_name=self.room_group_name, pinned=True).order_by('-created_at')
+        old_messages = ChannelMessage.objects.filter(channel=self.channel, pinned=True, approved=True).order_by('-created_at')
         messages = []
         for message in old_messages:
             messages.append({'command':'get_pinned_message',
                              'id':message.id,
-                             'user_id': message.user_id,
+                             'user_id': message.ip_address.id,
                              'message':message.message,
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
@@ -74,16 +83,40 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
 
     @database_sync_to_async
+    def channel_exists(self):
+        channel = Channel.objects.filter(channel_name = self.room_group_name)
+        if channel:
+             return channel.all()[0]
+        return False
+
+    @database_sync_to_async
     def add_message(self, username, message):
-        channel_message = ChannelMessage()
-        channel_message.user_id = self.user_id
-        channel_message.channel_name = self.room_group_name
-        channel_message.user_name = username
-        channel_message.message = message
-        channel_message.votes = 0
-        channel_message.pinned = False
-        channel_message.save()
-        return channel_message.id
+       
+        channel = Channel.objects.filter(channel_name = self.room_group_name)
+        if channel:
+             self.channel = channel.all()[0]
+             channel_message = ChannelMessage()
+             channel_message.user_id = self.user_id
+             channel_message.channel = self.channel
+             channel_message.user_name = username
+             channel_message.message = message
+             channel_message.votes = 0
+             channel_message.pinned = False
+        
+             channel_message.approved = not self.channel.moderate
+             ip_address = IPAddress.objects.filter(ip_address=self.user_id)
+             if ip_address:
+                ip_address = ip_address.all()[0]
+             else:
+                ip_address = IPAddress(ip_address = self.user_id, blocked=False)
+                ip_address.save()
+             if ip_address.blocked:
+                channel_message.approved = False 
+             channel_message.ip_address = ip_address
+             channel_message.save()
+             return channel_message.id, channel_message.approved, channel_message.ip_address.id
+        else:
+            print(f"Cannot find channel {channel}")
 
     @database_sync_to_async
     def delete_message(self, id):
@@ -104,20 +137,25 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
         if command == 'add':
             message = text_data_json['message']
-            username = text_data_json['username']
-            message_id = await self.add_message(username, message)
-            # Send message to room group
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'command' : command,
-                    'id':message_id,
-                    'user_id':self.user_id,
-                    'username': username,
-                    'message': message
-                }
-            )
+            if 'http' not in message:
+                username = text_data_json['username']
+                result = await self.add_message(username, message)
+                if result:
+                    message_id, approved, user_id = result
+                    # Send message to room group
+#                   cmd = 'moderate_message' if not approved else 'add'
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'chat_message',
+                            'command' : 'add',
+                            'id':message_id,
+                            'user_id':user_id,
+                            'username': username,
+                            'approved':approved,
+                            'message': message
+                        }
+                    )
         elif command == 'get_messages':
             startIndex = int(text_data_json['start']);
             stopIndex  = int(text_data_json['stop']);
@@ -150,7 +188,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
     # Receive message from room group
     async def chat_message(self, event):
         command = event['command']
-        if command == 'add':
+        if command == 'moderate_message':
             username = event['username']
             message = event['message']
             id = event['id']
@@ -161,6 +199,19 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                 'id': id,
                 'user_id':event['user_id'],
                 'username': username
+            }))
+        if command == 'add':
+            username = event['username']
+            message = event['message']
+            id = event['id']
+            # Send message to WebSocket
+            await self.send(text_data=json.dumps({
+                'command' : command,
+                'message': message,
+                'id': id,
+                'user_id':event['user_id'],
+                'username': username,
+                'approved':event['approved']
             }))
         elif command == 'get_pinned_messages':
             await self.send_message({'command':'clear_pins'})
