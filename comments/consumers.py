@@ -23,6 +23,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 	
             await self.accept()
             self.user_id = self.scope['client'][0]
+            self.ip_obj = await self.register_ip(self.user_id)
             await self.send(text_data=json.dumps({
                 'command': 'register',
                 'id': self.user_id,
@@ -88,6 +89,19 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         if channel:
              return channel.all()[0]
         return False
+
+    @database_sync_to_async
+    def register_ip(self, ip_address):
+        ip = IPAddress.objects.filter(ip_address=ip_address)
+        if ip:
+             return ip.all()[0]
+        else:
+            ip = IPAddress()
+            ip.ip_address = ip_address
+            ip.blocked = False
+            ip.save()
+            return ip
+            
 
     @database_sync_to_async
     def add_message(self, username, message):
