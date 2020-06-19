@@ -1,0 +1,14 @@
+<html>
+	<body>
+
+		<center>
+			<form action='/go/' method='post'>
+ 				{% csrf_token %}
+				<input type='text' placeholder='Room Name' name='room'>
+				<input type='submit' value='Go !'>
+			</form>
+		</center>
+
+	</body>
+
+</html>

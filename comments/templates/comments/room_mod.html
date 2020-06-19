@@ -227,17 +227,19 @@
     } else if (data.command == 'change_name') {
 
 
-        jel = document.getElementById(data.user_id+'_uname');
-        jel.innerHTML = data.username;
-
-
+        jel = document.getElementById(data.user_id+'_ublock');
+        jel.remove();
+        
         var color = stringToHslColor(data.user_id, 50, 60);
 
         svg = "<div style='width:30px;margin:20%;'><svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\"  class=\"avatar color-{{ color_ix }}\" ><circle cx=\"50%\" cy=\"50%\" fill=\"" + color + "\" r='12' ></circle><text text-anchor='middle' x=\"50%\" y=\"70%\" style=\"color:white\" font-size=\"15px\">" + data.username[0] + "</text></svg></div>";
 
 
-        jel = document.getElementById(data.user_id+'_uimg');
-        jel.innerHTML = svg;
+
+        jel = document.querySelector('#users');
+        jel_el = '<div class="row" id="'+data.user_id+'_ublock" style="margin-top:2%"><div class="col-2 col-sm-2 col-md-2 col-lg-2" id="'+data.user_id+'_uimg" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8" style="padding-right:0;line-height:2" id="'+data.user_id+'_uname">' + data.username + '</div></div>';
+
+        jel.innerHTML = jel_el + jel.innerHTML;
 
    }
 };

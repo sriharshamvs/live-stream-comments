@@ -1,0 +1,56 @@
+{% extends "base_generic.html" %}
+
+
+{% block style %}
+label {
+    color: white !important;
+}
+{% endblock %}
+
+{% block content %}
+  <div class="row"> 
+  {% if form.errors %}
+    <p>Your username and password didn't match. Please try again.</p>
+  {% endif %}
+  
+  {% if next %}
+    {% if user.is_authenticated %}
+      <p>Your account doesn't have access to this page. To proceed,
+      please login with an account that has access.</p>
+    {% else %}
+      <p>Please login to see this page.</p>
+    {% endif %}
+  {% endif %}
+</div>
+<div class="row"> 
+    <div class="col-12 col-lg-6">
+        <div class="card teal lighten-2">
+            <div class="card-body">
+              <span class="card-title">Login</span>
+              <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <table>
+                <tr >
+                    <td>Username : &nbsp;</td>
+                    <td class='form-group'>{{ form.username }}</td>
+                </tr>
+                <tr>
+                    <td>Password : &nbsp;</td>
+                    <td>{{ form.password }}</td>
+                </tr>
+                </table>
+               
+            </div>
+            <div class="card-link text-right">
+                <button class="btn btn-primary" type="submit" value="login">Login</button>
+                <input  type="hidden" name="next" value="{{ next }}" />
+            
+              <a href="{% url 'password_reset' %}" style="color: white;">Lost password?</a>
+            </div>
+          </div> 
+        </form>
+</div>
+</div>
+  
+  
+{% endblock %}

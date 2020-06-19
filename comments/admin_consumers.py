@@ -57,7 +57,7 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
         return messages
 
     def get_old_users(self):
-        old_users  = ChannelSession.objects.filter(channel=self.channel, online=True).order_by('user_name')
+        old_users  = ChannelSession.objects.filter(channel=self.channel, online=True).order_by('-user_name')
         print(old_users)
         users  = []
         for user in old_users :

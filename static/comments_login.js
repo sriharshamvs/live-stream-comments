@@ -1,13 +1,19 @@
-/*var d = document, s = d.createElement('link');
-s.href = 'http://' + commentHost + '/static/materialize/css/materialize.css';
+var d = document, s = d.createElement('link');
+s.href = 'https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.css';
 s.rel = "stylesheet";
 (d.head || d.body).appendChild(s);
 
 var d = document, s = d.createElement('script');
-s.src = 'http://' + commentHost + '/static/materialize/js/materialize.js';
-(d.head || d.body).appendChild(s);*/
+s.src = 'https://unpkg.com/libphonenumber-js@1.7.52/bundle/libphonenumber-min.js';
+(d.head || d.body).appendChild(s);
 
-inital_portion = '<div class="container"><div class="row"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><div class="card col lg-12 sm-12 md-12"><div class="card-body" style="padding-bottom: 10px"><div class="row"><div class="col lg-12 sm-12 md-12 form-group" id="comment_errors"></div></div><div class="row"><div class="col lg-12 sm-12 md-12 form-group"><input class="form-control" id="chat-message-username" type="text" placeholder="Name"></div></div><div class="row"><div class="col sm-12 lg-12 md-12 form-group"><textarea class="form-control" id="chat-message-input" type="text" class="materialize-textarea" rows="5" placeholder="Message"></textarea></div></div><div class="row text-right"><div class="col-12 col-sm-12 col-lg-12 col-md-12"><a class="btn btn-primary" id="chat-message-submit" type="button" value="Send">Add Comment</a></div></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="pinned-chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin:10px;"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><button class="btn btn-primary form-control" onclick="load_comments();">Load More Comments</button></div></div></div>'
+
+modal_form = '<div class="row"><div class="col lg-12 sm-12 md-12" id="reg-alerts"></div></div><div class="row"><div class="col lg-12 sm-12 md-12 form-group">Name : <input class="form-control" id="reg-name" type="text" placeholder="Name"></div></div><div class="row"><div class="col lg-12 sm-12 md-12 form-group">Phone Number : <input class="form-control" id="reg-phno" type="tel" placeholder="Phone Number"></div></div>'
+
+modal_portion = '<div class="modal" tabindex="-1" role="dialog" id="registerModal" data-backdrop="static" data-keyboard="false"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Welcome, Please fill in the following details</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><p>'+modal_form+'</p>      </div><div class="modal-footer"><button type="button" class="btn btn-primary" onclick="register();">Register</button></div></div></div></div>';
+
+inital_portion = '<div class="container">'+modal_portion+'<div class="row"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><div class="card col lg-12 sm-12 md-12"><div class="card-body" style="padding-bottom: 10px"><div class="row"><div class="col lg-12 sm-12 md-12 form-group"><input class="form-control" id="chat-message-username" type="text" placeholder="Name"></div></div><div class="row"><div class="col sm-12 lg-12 md-12 form-group"><textarea class="form-control" id="chat-message-input" type="text" class="materialize-textarea" rows="5" placeholder="Message"></textarea></div></div><div class="row text-right"><div class="col-12 col-sm-12 col-lg-12 col-md-12"><a class="btn btn-primary" id="chat-message-submit" type="button" value="Send">Add Comment</a></div></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="pinned-chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin-top:10px;"><div class="col sm-12 md-12 lg-12"><div id="chat-log" class="col-sm-12 col-md-12 col-lg-12"></div></div></div><div class="row" style="margin:10px;"><div class="col-12 col-sm-12 col-md-12 col-lg-12"><button class="btn btn-primary form-control" onclick="load_comments();">Load More Comments</button></div></div></div>'
+
 
 function stringToHslColor(str, s, l) {
     var hash = 0;
@@ -20,11 +26,7 @@ function stringToHslColor(str, s, l) {
 }
 
 document.querySelector('#comment_thread').innerHTML = inital_portion;
-
-if (typeof contactName !== 'undefined') {
-document.querySelector('#chat-message-username').value = contactName;
-
-}
+$("#registerModal").modal();
 
 const chatSocket = new WebSocket(
     'wss://'
@@ -33,6 +35,27 @@ const chatSocket = new WebSocket(
     + roomName
     + '/'
 );
+
+
+
+register = function(){
+   alerts = document.querySelector('#reg-alerts');
+   rname = document.querySelector('#reg-name').value;
+   rphno = document.querySelector('#reg-phno').value;
+   if (rname.length <= 0){
+   	alerts.innerHTML = "Name empty. Please give a valid name";
+   	return 0;
+   }
+   var at = new libphonenumber.AsYouType('IN');
+   at.input(rphno)
+   if (at.isValid() == false) {
+   	alerts.innerHTML = "Invalid Phone Number. Please give a valid PhoneNumber";
+   	return 0;   
+   }
+   alerts.innerHTML = "Proceeding to registration. Please wait.";
+} 
+
+
 
 var startIndex = 0;
 var stopIndex = 10;
@@ -47,20 +70,15 @@ load_comments = function() {
     stopIndex += 10;
 }
 
-	load_pinned_comments = function() {
-       document.querySelector('#pinned-chat-log').innerHTML = "";
-	
-	   chatSocket.send(JSON.stringify({
+load_pinned_comments = function() {
+	document.querySelector('#pinned-chat-log').innerHTML = "";
+	chatSocket.send(JSON.stringify({
 		    'command': 'get_pinned_messages',
-		}));
+	}));
 
-	}
+}
 chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
-    el = document.querySelector("#comment_errors");
-    el.innerHTML = "";
-    
-    console.log(data);
     if (data.command == 'add' || data.command == 'get_message' || data.command=='get_pinned_message') {
         var color = stringToHslColor(data.user_id + "---" + data.username, 50, 60);
 
@@ -114,11 +132,7 @@ function deleteMsg(id) {
 }
 
 chatSocket.onclose = function (e) {
-    el = document.querySelector("#comment_errors");
-    el.innerHTML = "<div class='alert alert-danger'>Connection to comments server closed unexpectedly, Please refresh.</div>";
-    
     console.error('Chat socket closed unexpectedly');
-    
 };
 
 document.querySelector('#chat-message-input').focus();
