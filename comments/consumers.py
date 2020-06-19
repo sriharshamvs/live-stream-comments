@@ -2,9 +2,10 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import  ChannelMessage, Channel, IPAddress
+from .models import  ChannelMessage, Channel, IPAddress, ChannelSession
 from django.utils import  timesince
 import uuid
+import datetime
 
 class CommentsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -22,8 +23,12 @@ class CommentsConsumer(AsyncWebsocketConsumer):
             )
 	
             await self.accept()
-            self.user_id = self.scope['client'][0]
-            self.ip_obj = await self.register_ip(self.user_id)
+            self.client_address = self.scope['client'][0]
+            self.user_id = str(uuid.uuid4()) # Changing user id from IP to uuid.
+            #self.user_id = self.scope['client'][0]
+            self.ip_obj = await self.register_ip(self.client_address)
+            self.channel_session = await self.register_session()
+            await self.send_join_message()
             await self.send(text_data=json.dumps({
                 'command': 'register',
                 'id': self.user_id,
@@ -36,6 +41,8 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         # Leave room group
+        await self.send_join_message(state="leave")
+        await self.deregister_session()
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
@@ -53,7 +60,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
             messages.append({'command':'get_message',
                              'id':message.id,
-                             'user_id': message.ip_address.id,
+                             'user_id': message.user_id,
                              'message':message.message,
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
@@ -65,7 +72,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         for message in old_messages:
             messages.append({'command':'get_pinned_message',
                              'id':message.id,
-                             'user_id': message.ip_address.id,
+                             'user_id': message.user_id,
                              'message':message.message,
                              'username':message.user_name,
                              'created_at': timesince.timesince(message.created_at)})
@@ -102,6 +109,40 @@ class CommentsConsumer(AsyncWebsocketConsumer):
             ip.save()
             return ip
             
+    @database_sync_to_async
+    def register_session(self):
+        cs = ChannelSession()
+        
+        channel = Channel.objects.filter(channel_name = self.room_group_name)
+        if channel:
+            cs.channel = channel[0]
+            cs.user_id = self.user_id
+            cs.user_name = ''
+            cs.online = True
+            cs.save()
+
+            return cs
+        return False
+    
+    @database_sync_to_async
+    def deregister_session(self):
+        channel = Channel.objects.filter(channel_name = self.room_group_name)
+        if channel:
+            self.channel_session.ended_at = datetime.datetime.now()
+            self.channel_session.online = False
+            self.channel_session.save()
+
+    async def send_join_message(self, state="join"):
+        await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'chat_message',
+                            'command' : state,
+                            'user_id':self.user_id,
+                            'username': self.channel_session.user_name,                           
+                        }
+                    )
+
 
     @database_sync_to_async
     def add_message(self, username, message):
@@ -118,17 +159,22 @@ class CommentsConsumer(AsyncWebsocketConsumer):
              channel_message.pinned = False
         
              channel_message.approved = not self.channel.moderate
-             ip_address = IPAddress.objects.filter(ip_address=self.user_id)
+             ip_address = IPAddress.objects.filter(ip_address=self.client_address)
              if ip_address:
                 ip_address = ip_address.all()[0]
              else:
-                ip_address = IPAddress(ip_address = self.user_id, blocked=False)
+                ip_address = IPAddress(ip_address = self.client_address, blocked=False)
                 ip_address.save()
              if ip_address.blocked:
                 channel_message.approved = False 
              channel_message.ip_address = ip_address
              channel_message.save()
-             return channel_message.id, channel_message.approved, channel_message.ip_address.id
+             
+             if self.channel_session:
+                 self.channel_session.user_name = username
+                 self.channel_session.save()
+
+             return channel_message.id, channel_message.approved, channel_message.user_id
         else:
             print(f"Cannot find channel {channel}")
 
@@ -170,6 +216,16 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                             'message': message
                         }
                     )
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'chat_message',
+                            'command' : 'change_name',
+                            'user_id':self.user_id,
+                            'username': self.channel_session.user_name,                           
+                        }
+                    )
+
         elif command == 'get_messages':
             startIndex = int(text_data_json['start']);
             stopIndex  = int(text_data_json['stop']);
@@ -237,4 +293,10 @@ class CommentsConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'command': command,
                 'id' : id,
+            }))
+        elif command in ["join", "leave", "change_name"]:
+            await self.send(text_data=json.dumps({
+                'command': command,
+                'user_id': event['user_id'],
+                'username': event['username']
             }))

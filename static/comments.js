@@ -20,6 +20,12 @@ function stringToHslColor(str, s, l) {
 }
 
 document.querySelector('#comment_thread').innerHTML = inital_portion;
+
+if (typeof contactName !== 'undefined') {
+document.querySelector('#chat-message-username').value = contactName;
+
+}
+
 const chatSocket = new WebSocket(
     'wss://'
     + commentHost
@@ -51,6 +57,7 @@ load_comments = function() {
 	}
 chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
+    console.log(data);
     if (data.command == 'add' || data.command == 'get_message' || data.command=='get_pinned_message') {
         var color = stringToHslColor(data.user_id + "---" + data.username, 50, 60);
 

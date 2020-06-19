@@ -56,6 +56,18 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
                              'created_at': timesince.timesince(message.created_at)})
         return messages
 
+    def get_old_users(self):
+        old_users  = ChannelSession.objects.filter(channel=self.channel, online=True).order_by('user_name')
+        print(old_users)
+        users  = []
+        for user in old_users :
+            users.append({'command':'join',
+                          'user_id': user.user_id,
+                          'username':user.user_name,
+                        })
+        return users 
+
+
     def get_pinned_messages(self):
         old_messages = ChannelMessage.objects.filter(channel=self.channel, pinned=True).order_by('-created_at')
         messages = []
@@ -69,11 +81,18 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
                              'blocked':message.ip_address.blocked,
                              'created_at': timesince.timesince(message.created_at)})
         return messages
+    
+    async def push_old_users(self):
+        old_users = await database_sync_to_async(self.get_old_users)()        
+        for user in old_users:
+            await  self.send_message(user)
+
 
     async def push_old_messages(self, start, stop):
-        old_messages = await database_sync_to_async(self.get_old_messages)(start, stop)
+        old_messages = await database_sync_to_async(self.get_old_messages)(start, stop)     
         for message in old_messages:
             await  self.send_message(message)
+
 
     async def send_pinned_messages(self):
         old_messages = await database_sync_to_async(self.get_pinned_messages)()
@@ -216,6 +235,10 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
             stopIndex  = int(text_data_json['stop']);
             await self.push_old_messages(startIndex, stopIndex)
 
+        elif command == 'get_users':
+            
+            await self.push_old_users()
+
         elif command == 'get_pinned_messages':
 
             await self.send_pinned_messages()
@@ -247,14 +270,13 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
             username = event['username']
             message = event['message']
             id = event['id']
-            print("adaj,fasa")
             user_id, blocked = await self.get_message_ip(id)
             # Send message to WebSocket
             await self.send(text_data=json.dumps({
                 'command' : command,
                 'message': message,
                 'id': id,
-                'user_id':user_id,
+                'user_id':event['user_id'],
                 'username': username,
                 'approved':event['approved'],
                 'blocked':blocked
@@ -269,4 +291,11 @@ class CommentsConsumerAdmin(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'command': command,
                 'id' : id,
+            }))
+        elif command in ["join", "leave", "change_name"]:
+            
+            await self.send(text_data=json.dumps({
+                'command': command,
+                'user_id': event['user_id'],
+                'username': event['username']
             }))
