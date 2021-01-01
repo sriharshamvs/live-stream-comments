@@ -206,9 +206,9 @@
 
 
 
-        jel = document.querySelector('#users');
-        jel_el = '<div class="row" id="'+data.user_id+'_ublock" style="margin-top:2%"><div class="col-2 col-sm-2 col-md-2 col-lg-2" id="'+data.user_id+'_uimg" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8" style="padding-right:0;line-height:2" id="'+data.user_id+'_uname">' + data.username + '</div></div>';
-        jel.innerHTML += jel_el;
+//        jel = document.querySelector('#users');
+//        jel_el = '<div class="row" id="'+data.user_id+'_ublock" style="margin-top:2%"><div class="col-2 col-sm-2 col-md-2 col-lg-2" id="'+data.user_id+'_uimg" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8" style="padding-right:0;line-height:2" id="'+data.user_id+'_uname">' + data.username + '</div></div>';
+//        jel.innerHTML += jel_el;
 
 
     } else if (data.command == 'leave') {
@@ -218,8 +218,8 @@
             streamCount = 0;
         }
 
-        jel = document.getElementById(data.user_id+'_ublock');
-        jel.remove();
+  //      jel = document.getElementById(data.user_id+'_ublock');
+  //      jel.remove();
         el = document.querySelector('#counter');
         el.innerHTML = streamCount;
 
@@ -227,8 +227,8 @@
     } else if (data.command == 'change_name') {
 
 
-        jel = document.getElementById(data.user_id+'_ublock');
-        jel.remove();
+   //     jel = document.getElementById(data.user_id+'_ublock');
+    //    jel.remove();
         
         var color = stringToHslColor(data.user_id, 50, 60);
 
@@ -236,10 +236,10 @@
 
 
 
-        jel = document.querySelector('#users');
-        jel_el = '<div class="row" id="'+data.user_id+'_ublock" style="margin-top:2%"><div class="col-2 col-sm-2 col-md-2 col-lg-2" id="'+data.user_id+'_uimg" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8" style="padding-right:0;line-height:2" id="'+data.user_id+'_uname">' + data.username + '</div></div>';
+      //  jel = document.querySelector('#users');
+       // jel_el = '<div class="row" id="'+data.user_id+'_ublock" style="margin-top:2%"><div class="col-2 col-sm-2 col-md-2 col-lg-2" id="'+data.user_id+'_uimg" >' + svg + '</div><div class=" col-8 col-sm-8 col-md-8 col-lg-8" style="padding-right:0;line-height:2" id="'+data.user_id+'_uname">' + data.username + '</div></div>';
 
-        jel.innerHTML = jel_el + jel.innerHTML;
+       // jel.innerHTML = jel_el + jel.innerHTML;
 
    }
 };
