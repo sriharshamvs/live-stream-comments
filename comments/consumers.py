@@ -294,9 +294,9 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                 'command': command,
                 'id' : id,
             }))
-        elif command in ["join", "leave", "change_name"]:
-            await self.send(text_data=json.dumps({
-                'command': command,
-                'user_id': event['user_id'],
-                'username': event['username']
-            }))
+#        elif command in ["join", "leave", "change_name"]:
+#            await self.send(text_data=json.dumps({
+#                'command': command,
+#                'user_id': event['user_id'],
+#                'username': event['username']
+#            }))
