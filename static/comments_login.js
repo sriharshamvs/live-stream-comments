@@ -28,6 +28,7 @@ function stringToHslColor(str, s, l) {
 document.querySelector('#comment_thread').innerHTML = inital_portion;
 $("#registerModal").modal();
 
+/*-----------Comment this section to run on localhost------------------------*/
 const chatSocket = new WebSocket(
     'wss://'
     + commentHost
@@ -35,7 +36,17 @@ const chatSocket = new WebSocket(
     + roomName
     + '/'
 );
+/*----------------------------------------------------------------------------*/
 
+/*-----------Uncomment this section to run on localhost------------------------*/
+// const chatSocket = new WebSocket(
+//     'ws://'
+//     + commentHost
+//     + ':8001/ws/comments/'
+//     + roomName
+//     + '/'
+// );
+/*----------------------------------------------------------------------------*/
 
 
 register = function(){

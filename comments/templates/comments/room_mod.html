@@ -96,7 +96,7 @@
             var h = hash % 360;
             return 'hsl('+h+', '+s+'%, '+l+'%)';
         }
-
+        /*-----------Comment this section to run on localhost------------------------*/
         const chatSocket = new WebSocket(
             'wss://'
             + "stream.swecha.org:8001"
@@ -111,7 +111,24 @@
             + roomName
             + '/'
         );
-
+        /*----------------------------------------------------------------------------*/
+        
+        /*-----------Uncomment this section to run on localhost------------------------*/
+        // const chatSocket = new WebSocket(
+        //     'ws://'
+        //     + "localhost:8001"
+        //     + '/ws/comments_mod/'
+        //     + roomName
+        //     + '/'
+        // );
+        // const countSocket = new WebSocket(
+        //     'ws://'
+        //     + "localhost:8001"
+        //     + '/ws/count/'
+        //     + roomName
+        //     + '/'
+        // );
+        /*----------------------------------------------------------------------------*/
 	var startIndex = 0;
     var stopIndex = 10;
     

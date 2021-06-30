@@ -36,11 +36,17 @@ document.querySelector("#comment_thread").innerHTML = inital_portion
 if (typeof contactName !== "undefined") {
   document.querySelector("#chat-message-username").value = contactName
 }
-
+/*-----------Comment this section to run on localhost------------------------*/
 const chatSocket = new WebSocket(
   "wss://" + commentHost + ":8001/ws/comments/" + roomName + "/"
 )
+/*----------------------------------------------------------------------------*/
 
+/*-----------Uncomment this section to run on localhost------------------------*/
+// const chatSocket = new WebSocket(
+//   "ws://" + commentHost + ":8001/ws/comments/" + roomName + "/"
+// )
+/*----------------------------------------------------------------------------*/
 var startIndex = 0
 var stopIndex = 10
 load_comments = function () {

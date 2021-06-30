@@ -12,9 +12,7 @@
   background: none!important;
   border: none;
   padding: 0!important;
-  /*optional*/
   font-family: arial, sans-serif;
-  /*input has OS specific font-family*/
   color: #069;
   text-decoration: underline;
   cursor: pointer;
@@ -68,19 +66,28 @@
             var h = hash % 360;
             return 'hsl('+h+', '+s+'%, '+l+'%)';
         }
+        /*-----------Comment this section to run on localhost------------------------*/
         const chatSocket = new WebSocket(
-            'ws://'
+            'wss://'
             + "stream.swecha.org:8001"
             + '/ws/comments/'
             + roomName
             + '/'
         );
+        /*----------------------------------------------------------------------------*/
 
+        /*-----------Uncomment this section to run on localhost------------------------*/
+        // const chatSocket = new WebSocket(
+        //     'ws://'
+        //     + "localhost:8001"
+        //     + '/ws/comments/'
+        //     + roomName
+        //     + '/'
+        // );
+        /*----------------------------------------------------------------------------*/
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             if (data.command == 'add') {
-
-                //var color = colors[Math.abs(hashCode(data.user_id)) % colors.length];
                 var color = stringToHslColor(data.user_id, 50, 60);
 
                 svg = "<div style='width:50px;margin:20%;'><svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\"  class=\"avatar color-{{ color_ix }}\" >\n" +
@@ -96,7 +103,6 @@
                     btn = "";
                 }
                 card = '<div class="row" id="comment_' + data.id + '" style="margin-bottom: 0"><div class="col s12 m12"><div class="card horizontal" ><div class="card-image">' + svg + '</div><div class="card-stacked"><div class="card-content" style="padding-top: 10px; padding-bottom: 10px"><b style="font-size: larger">' + data.username + '</b><p>' + data.message + '</p></div>'+btn+'</div></div></div></div>'
-                //document.querySelector('#chat-log').innerHTML += ("<div style=\"border: 1px solid black;padding:5px;margin:5px\" id='comment_" + data.id + "'>" +  svg + "<div style='display: inline-block;margin-left: 5px'>" + data.username + '<br>' + data.message + '<br>' + btn + '</div>');
                 document.querySelector('#chat-log').innerHTML = card + document.querySelector('#chat-log').innerHTML;
             }
             else if (data.command == 'delete') {
@@ -124,12 +130,6 @@
         };
 
         document.querySelector('#chat-message-input').focus();
-        /* document.querySelector('#chat-message-input').onkeyup = function(e) {
-            if (e.keyCode === 13) {  // enter, return
-                document.querySelector('#chat-message-submit').click();
-            }
-        }; */
-
         document.querySelector('#chat-message-submit').onclick = function(e) {
             const messageInputDom = document.querySelector('#chat-message-input');
             const message = messageInputDom.value;
