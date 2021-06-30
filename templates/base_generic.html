@@ -1,44 +1,47 @@
 <html>
-
-
-<!-- <script>
+  <!-- <script>
 
 
 </script> -->
-{% load static %}
-<head>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" crossorigin="anonymous">
+  {% load static %}
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      crossorigin="anonymous"
+    />
 
     <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <style>
-    
-      {% block style %}
-      {% endblock %}
-  </style>
-<body>
-<div class="container">
-  <nav>
-    <div class="nav-wrapper">
-      <a href="#" class="brand-logo" style="font-size:22px;padding-left:10px">Swecha Comments</a>
-      <ul class="right ">
-      {% if user.is_authenticated %}
-      <li> <a href="{% url 'logout'%}?next={{request.path}}" >Logout</a></li>
-	{% else %}
-      <li><a href="{% url 'login'%}?next={{request.path}}" >Login</a></li>
 
-    {% endif %} 
-      </ul>
-    </div>
-  </nav>
-    {% block content %}
+    {% block style %}
     {% endblock %}
+  </style>
+  <body>
+    <div class="container">
+      <nav>
+        <div class="nav-wrapper">
+          <a
+            href="#"
+            class="brand-logo"
+            style="font-size: 22px; padding-left: 10px"
+            >Swecha Comments</a
+          >
+          <ul class="right">
+            {% if user.is_authenticated %}
+            <li>
+              <a href="{% url 'logout'%}?next={{request.path}}">Logout</a>
+            </li>
+            {% else %}
+            <li><a href="{% url 'login'%}?next={{request.path}}">Login</a></li>
 
-
-
-   
-</div>
-</body>
-
+            {% endif %}
+          </ul>
+        </div>
+      </nav>
+      {% block content %} {% endblock %}
+    </div>
+  </body>
 </html>
