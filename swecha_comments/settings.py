@@ -11,9 +11,23 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+from environ import Env
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env = Env()
+env.read_env(env_file='config/.env')
+
+DATABASES_ENGINE = env('DATABASES_ENGINE')
+DATABASES_NAME = env('DATABASES_NAME')
+DATABASES_USER = env('DATABASES_USER')
+DATABASES_PASSWORD = env('DATABASES_PASSWORD')
+DATABASES_HOST = env('DATABASES_HOST')
+DATABASES_PORT = env('DATABASES_PORT')
+
+ALLOWED = env('ALLOWED').split(' ')
+
+
 LOGIN_REDIRECT_URL = '/'
 
 
@@ -21,12 +35,12 @@ LOGIN_REDIRECT_URL = '/'
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'qxi$!w=2l@l3xc@1!a1f#k+dmb3ih$1qb_kb5-$-^0w0l0qn9p'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['stream.swecha.org', '127.0.0.1']
+ALLOWED_HOSTS = ALLOWED
 
 
 # Application definition
@@ -89,14 +103,12 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-	'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'comments',
-        'USER': 'comments',
-        'PASSWORD': 'comments',
-        'HOST': 'localhost',
-        'PORT': '',
+        'ENGINE': DATABASES_ENGINE,
+        'NAME': DATABASES_NAME,
+        'USER': DATABASES_USER,
+        'PASSWORD': DATABASES_PASSWORD,
+        'HOST': DATABASES_HOST,
+        'PORT': DATABASES_PORT
     }
 }
 
