@@ -8,7 +8,7 @@ import django
 from channels.routing import get_default_application
 
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "swecha_comments.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "live-stream-comments.settings")
 django.setup()
 
 from comments.models import ChannelSession
